@@ -1,3 +1,9 @@
+# Copyright 2019 spycrab0
+# Licensed under MIT License
+# Refer to the LICENSE file included
+
+# SPDX-License-Identifier: MIT
+
 cmake_minimum_required(VERSION 3.1)
 
 project(worker++ CXX)
