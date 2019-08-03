@@ -1,0 +1,12 @@
+include(GoogleTest)
+
+function(add_unittest test_name)
+  add_executable(${test_name} ${test_name}.cc)
+  target_link_libraries(${test_name} PRIVATE gtest gtest_main worker++)
+  gtest_add_tests(TARGET ${test_name})
+endfunction(add_unittest)
+
+add_unittest(job)
+add_unittest(worker)
+
+
