@@ -25,4 +25,4 @@ TODO Usage
 
 ## License
 
-Worker++ is under the MIT License. See [LICENSE].
+Worker++ is under the MIT License. See [LICENSE](LICENSE).
