@@ -4,8 +4,6 @@
 
 // SPDX-License-Identifier: MIT
 
-#include <iostream>
-
 #include <gtest/gtest.h>
 
 #include <worker++/worker.hpp>
