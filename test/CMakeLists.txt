@@ -14,5 +14,6 @@ endfunction(add_unittest)
 
 add_unittest(job)
 add_unittest(worker)
+add_unittest(team)
 
 

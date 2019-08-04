@@ -10,6 +10,7 @@
 #include <condition_variable>
 #include <mutex>
 #include <queue>
+#include <stdexcept>
 #include <thread>
 #include <vector>
 
@@ -29,7 +30,7 @@ public:
   }
 
   void loop() {
-    std::lock_guard<std::mutex> thread_guard(m_thread_running);
+    std::lock_guard<std::mutex> thread_guard(m_thread_mutex);
 
     m_running = true;
 
@@ -39,11 +40,16 @@ public:
         auto front = m_queue.front();
 
         {
-          std::lock_guard<std::mutex> queue_guard(m_queue_lock);
+          std::lock_guard<std::mutex> queue_guard(m_queue_mutex);
           m_queue.pop();
         }
 
-        m_results.push_back(m_job.run(front));
+        auto result = m_job.run(front);
+
+        {
+          std::lock_guard<std::mutex> result_guard(m_result_mutex);
+          m_results.push_back(std::move(result));
+        }
       }
 
       if (m_stop_if_queue_empty)
@@ -54,7 +60,7 @@ public:
 
       // We've got nothing to do at the moment, wait for something to happen
       {
-        std::unique_lock<std::mutex> lk(m_queue_lock);
+        std::unique_lock<std::mutex> lk(m_queue_mutex);
         m_wake.wait(lk,
                     [this] { return m_stop_requested || !m_queue.empty(); });
       };
@@ -69,7 +75,7 @@ public:
 
   void add(T_in item) {
     {
-      std::lock_guard<std::mutex> queue_guard(m_queue_lock);
+      std::lock_guard<std::mutex> queue_guard(m_queue_mutex);
       m_queue.push(item);
     }
     m_wake.notify_one();
@@ -88,12 +94,28 @@ public:
 
   const std::vector<T_out> &results() const { return m_results; }
 
+  void clear_results() {
+    std::lock_guard<std::mutex> result_guard(m_result_mutex);
+    m_results.clear();
+  }
+
+  T_out yield_one() {
+    std::lock_guard<std::mutex> result_guard(m_result_mutex);
+    if (m_results.size() == 0)
+      throw std::runtime_error("No results available!");
+
+    T_out one = m_results.back();
+    m_results.pop_back();
+
+    return one;
+  }
+
   void stop(bool async = true) {
     if (!m_running)
       return;
 
     {
-      std::lock_guard<std::mutex> wait_guard(m_queue_lock);
+      std::lock_guard<std::mutex> wait_guard(m_queue_mutex);
       m_stop_requested = true;
     }
     m_wake.notify_one();
@@ -103,7 +125,7 @@ public:
 
     {
       // Wait for the thread to finish
-      std::lock_guard<std::mutex> lk(m_thread_running);
+      std::lock_guard<std::mutex> lk(m_thread_mutex);
     }
   }
 
@@ -112,8 +134,9 @@ private:
   std::queue<T_in> m_queue;
   std::vector<T_out> m_results;
 
-  std::mutex m_thread_running;
-  std::mutex m_queue_lock;
+  std::mutex m_thread_mutex;
+  std::mutex m_queue_mutex;
+  std::mutex m_result_mutex;
 
   std::atomic<bool> m_running;
   bool m_stop_requested = false;
