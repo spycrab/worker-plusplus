@@ -58,7 +58,7 @@ public:
       if (m_stop_requested)
         break;
 
-      // We've got nothing to do at the moment, wait for something to happen
+      // Nothing to do at the moment, wait for something to happen
       {
         std::unique_lock<std::mutex> lk(m_queue_mutex);
         m_wake.wait(lk,

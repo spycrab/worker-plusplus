@@ -52,7 +52,7 @@ public:
     if (m_queue.empty())
       return;
 
-    // This calculate how many items each worker should have in his queue
+    // Calculate how many items each worker should have in his queue
     const size_t ideal_average = static_cast<size_t>(
         std::ceil((std::accumulate(m_workers.begin(), m_workers.end(), 0,
                                    [](const size_t sum, const auto &worker) {
@@ -88,7 +88,6 @@ public:
     std::vector<T_out> all_results;
 
     // Wait until there's nothing more to process
-
     while (std::accumulate(m_workers.begin(), m_workers.end(), 0,
                            [](const size_t sum, const auto &worker) {
                              return sum + worker->queue_size();
@@ -106,7 +105,6 @@ public:
   }
 
   T_out yield_any(bool async = false) {
-
     auto result = std::find_if(
         m_workers.begin(), m_workers.end(),
         [](const auto &worker) { return worker->queue_size() > 0; });
